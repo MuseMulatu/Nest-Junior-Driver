@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "staging": "moringa-rides",
+    "default": "moringa-rides"
+  },
+  "targets": {},
+  "etags": {}
+}

@@ -1,0 +1,63 @@
+{
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk",
+      "env": {
+        "EXPO_ANDROID_MANIFEST_MERGE_TOOL": "tools:replace"
+      }
+      },
+      "channel": "default",
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_cnVsaW5nLWNvdWdhci03NS5jbGVyay5hY2NvdW50cy5kZXYk",
+        "DATABASE_URL": "postgresql://neondb_owner:HBSmwAqFt35C@ep-still-sky-a26eni1l.eu-central-1.aws.neon.tech/neondb?sslmode=require",
+        "EXPO_PUBLIC_SERVER_URL": "https://uber.dev/",
+        "EXPO_PUBLIC_GEOAPIFY_API_KEY": "57508a092ed84e1a854124ef718cba7a",
+      }
+    },     
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_cnVsaW5nLWNvdWdhci03NS5jbGVyay5hY2NvdW50cy5kZXYk",
+        "DATABASE_URL": "postgresql://neondb_owner:HBSmwAqFt35C@ep-still-sky-a26eni1l.eu-central-1.aws.neon.tech/neondb?sslmode=require",
+        "EXPO_PUBLIC_SERVER_URL": "https://uber.dev/",
+        "EXPO_PUBLIC_GEOAPIFY_API_KEY": "57508a092ed84e1a854124ef718cba7a",
+      }
+    },
+    "preview2": {
+      "android": {
+        "gradleCommand": ":app:assembleRelease",
+        "env": {
+          "EXPO_ANDROID_MANIFEST_MERGE_TOOL": "tools:replace",
+          "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_cnVsaW5nLWNvdWdhci03NS5jbGVyay5hY2NvdW50cy5kZXYk",
+          "DATABASE_URL": "postgresql://neondb_owner:HBSmwAqFt35C@ep-still-sky-a26eni1l.eu-central-1.aws.neon.tech/neondb?sslmode=require",
+          "EXPO_PUBLIC_SERVER_URL": "https://uber.dev/",
+          "EXPO_PUBLIC_GEOAPIFY_API_KEY": "57508a092ed84e1a854124ef718cba7a",
+        }
+      }
+    },
+    "preview3": {
+      "developmentClient": true
+    },
+    "preview4": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_cnVsaW5nLWNvdWdhci03NS5jbGVyay5hY2NvdW50cy5kZXYk",
+        "DATABASE_URL": "postgresql://neondb_owner:HBSmwAqFt35C@ep-still-sky-a26eni1l.eu-central-1.aws.neon.tech/neondb?sslmode=require",
+        "EXPO_PUBLIC_SERVER_URL": "https://uber.dev/",
+        "EXPO_PUBLIC_GEOAPIFY_API_KEY": "57508a092ed84e1a854124ef718cba7a",
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "channel": "default"
+    }
+  },
+  "submit": {
+    "production": {}
+  },
+  cli: {
+    appVersionSource: "remote"
+  }
+}

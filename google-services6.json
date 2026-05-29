@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "421773572020",
+    "project_id": "share-transport",
+    "storage_bucket": "share-transport.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:421773572020:android:13ec6083703fcd4156e4e1",
+        "android_client_info": {
+          "package_name": "com.itsmuse.shareDriver"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "421773572020-8vec80jsioinp00t22kmoesactnrhhn1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD2oQgM6KJIDgZ-re4N6h9CDj4J5NZs33Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "421773572020-8vec80jsioinp00t22kmoesactnrhhn1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

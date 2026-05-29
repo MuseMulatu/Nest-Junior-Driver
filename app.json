@@ -1,0 +1,170 @@
+{
+  "expo": {
+    "name": "Share - Driver",
+    "slug": "share-driver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2a2a2a"
+    },
+    "assetBundlePatterns": [
+      "assets/sounds/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "y"
+    },
+    "android": {
+      "runtimeVersion": {
+        "policy": "appVersion"
+      },
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.itsmuse.shareDriver",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDA8XVAaxYSh8A5tLO02T9sEJqhHN6EXkE"
+        }
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "server",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/f8667242-608a-4291-8e2e-ececfefbc33f"
+    },
+    "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/crashlytics",
+      "@react-native-firebase/auth",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(SHARE) to access your camera",
+          "microphonePermission": "Allow $(SHARE) to access your microphone",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#ffffff",
+          "defaultChannelId": "ride_notifications",
+          "vibrationPattern": [
+            0,
+            200,
+            100,
+            1000,
+            300,
+            200,
+            100,
+            1000,
+            300,
+            200,
+            100,
+            1000,
+            300,
+            200,
+            100,
+            1000,
+            300,
+            200,
+            100,
+            1000,
+            300,
+            200,
+            100,
+            1000,
+            300,
+            200,
+            100,
+            1000,
+            300
+          ],
+          "sounds": [
+            "./assets/sounds/ride_request2.mp3",
+            "./assets/ride_request.wav",
+            "./assets/sounds/new_follower.mp3",
+            "./assets/sounds/new_follower1.wav",
+            "./assets/ride_request2.mp3",
+            "./assets/sounds/ride_request1.wav"
+          ],
+          "enableBackgroundRemoteNotifications": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          },
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
+        }
+      ],
+      [
+        "expo-router",
+        {
+          "origin": "https://uber.dev/"
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/yigezubisratgothic.ttf",
+            "./assets/fonts/hiwua.ttf"
+          ]
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": "https://uber.dev/"
+      },
+      "eas": {
+        "projectId": "f8667242-608a-4291-8e2e-ececfefbc33f"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
+  }
+}
