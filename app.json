@@ -7,17 +7,16 @@
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#2a2a2a"
-    },
     "assetBundlePatterns": [
       "assets/sounds/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.itsmuse.nestjuniordriver"
+      "bundleIdentifier": "com.itsmuse.nestjuniordriver",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Nest Junior requires camera access to capture student boarding snapshots and provide secure live look-ins.",
+        "NSMicrophoneUsageDescription": "Nest Junior requires microphone access to transmit cabin audio during live look-ins."
+      }
     },
     "android": {
       "runtimeVersion": {
@@ -56,61 +55,12 @@
     "plugins": [
       "@react-native-firebase/app",
       "@react-native-firebase/crashlytics",
-      "@react-native-firebase/auth",
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow $(SHARE) to access your camera",
-          "microphonePermission": "Allow $(SHARE) to access your microphone",
-          "recordAudioAndroid": true
-        }
-      ],
       [
         "expo-notifications",
         {
           "icon": "./assets/images/icon.png",
           "color": "#ffffff",
-          "defaultChannelId": "ride_notifications",
-          "vibrationPattern": [
-            0,
-            200,
-            100,
-            1000,
-            300,
-            200,
-            100,
-            1000,
-            300,
-            200,
-            100,
-            1000,
-            300,
-            200,
-            100,
-            1000,
-            300,
-            200,
-            100,
-            1000,
-            300,
-            200,
-            100,
-            1000,
-            300,
-            200,
-            100,
-            1000,
-            300
-          ],
-          "sounds": [
-            "./assets/sounds/ride_request2.mp3",
-            "./assets/ride_request.wav",
-            "./assets/sounds/new_follower.mp3",
-            "./assets/sounds/new_follower1.wav",
-            "./assets/ride_request2.mp3",
-            "./assets/sounds/ride_request1.wav"
-          ],
-          "enableBackgroundRemoteNotifications": true
+          "defaultChannelId": "ride_notifications"
         }
       ],
       [
