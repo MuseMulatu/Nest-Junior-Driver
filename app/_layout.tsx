@@ -1,6 +1,6 @@
 import { LogBox } from 'react-native';
 LogBox.ignoreAllLogs(true); // Turn off all yellow box warnings
-
+import "../global.css";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -9,7 +9,7 @@ import "react-native-reanimated";
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import * as SQLite from "expo-sqlite";
 import { initLocalDB} from "@/lib/localDB"; 
-import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
+//import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 
 const db = SQLite.openDatabaseSync("localDB.db");
 
@@ -27,7 +27,7 @@ if (!publishableKey) {
 LogBox.ignoreLogs(["Clerk:"]);
 
 export default function RootLayout() {
- useDrizzleStudio(db); 
+ //useDrizzleStudio(db); 
   const [loaded] = useFonts({
     "Jakarta-Bold": require("../assets/fonts/PlusJakartaSans-Bold.ttf"),
     "Jakarta-ExtraBold": require("../assets/fonts/PlusJakartaSans-ExtraBold.ttf"),

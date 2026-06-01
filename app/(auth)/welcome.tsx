@@ -1,73 +1,73 @@
+import React, { useRef, useState, useEffect } from "react";
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from "expo-router";
-import { useRef, useState, useEffect } from "react";
-import { Animated, Dimensions, Image, Text, TouchableOpacity, View } from "react-native";
+import { Animated, Dimensions, Image, Text, TouchableOpacity, View, FlatList, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Swiper from "react-native-swiper";
 import CustomButton from "@/components/CustomButton";
 import { onboarding } from "@/constants";
 import excited from "@/assets/images/driving-gets-him-excited.jpg";
-import { Video } from 'expo-av';
+//import { useVideoPlayer, VideoView } from 'expo-video';
+import nestJuniorLogo from "@/assets/images/nest-junior-logo.png";
 
 const { width } = Dimensions.get('window');
+
 const Welcome = () => {
-  const swiperRef = useRef<Swiper>(null);
+  const flatListRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const progress = useRef(new Animated.Value(0)).current;
-  const isLastSlide = activeIndex === onboarding.length - 1;
+  const isLastSlide = activeIndex === 2;
     
- const [mediaUrl, setMediaUrl] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0,  seconds: 0 });
+  const [mediaUrl, setMediaUrl] = useState(null);
+  const [mediaType, setMediaType] = useState(null);
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
-  // Fetch media URL
   useEffect(() => {
     const fetchMedia = async () => {
       try {
-        const res = await fetch("https://server-7az0.onrender.com/admin-settings");
-        const adminData = await res.json();
-        console.log("adminData", adminData)
-        const { credit_recharge_modal } = adminData;
-        const {welcome_url} = credit_recharge_modal
-        setMediaUrl(welcome_url);
-        setMediaType(welcome_url?.match(/\.(mp4|mov|webm)$/i) ? 'video' : 'image');
+        const res = await fetch("https://api.zabiya.com/api/v1/settings/onboarding");
+        const json = await res.json();
+        
+        if (json.success && json.data) {
+          const { welcomeMediaUrl } = json.data;
+          setMediaUrl(welcomeMediaUrl);
+          setMediaType(welcomeMediaUrl?.match(/\.(mp4|mov|webm)$/i) ? 'video' : 'image');
+        }
       } catch (error) {
-       //console .error('Error fetching media:', error);
+        console.warn("Could not fetch remote media, falling back to local logo.");
         setMediaType('image');
       }
     };
     
     fetchMedia();
   }, []);
-const CountdownTimer = () => (
-  <View className="flex-row justify-center space-x-4 mt-6">
-    <CountdownBox value={timeLeft.days || 0} label="Days" />
-    <CountdownBox value={timeLeft.hours || 0} label="Hours" />
-    <CountdownBox value={timeLeft.minutes || 0} label="Minutes" />
-    <CountdownBox value={timeLeft.seconds || 0} label="Seconds" /> 
-  </View>
-);
-  useEffect(() => {
-// Update the calculateTimeLeft function
-const calculateTimeLeft = () => {
-  const now = new Date();
-  let targetDate = new Date('2025-08-12');
-  
-  if (now > new Date('2025-08-17')) {
-    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-  }
-  if (now > targetDate) {
-    targetDate = new Date('2025-08-27');
-  }
 
-  const difference = targetDate.getTime() - now.getTime();
-  return {
-    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-    minutes: Math.floor((difference / 1000 / 60) % 60),
-    seconds: Math.floor((difference / 1000) % 60)  // Add seconds calculation
-  };
-};
+  useEffect(() => {
+    Animated.spring(progress, {
+      toValue: activeIndex,
+      useNativeDriver: false
+    }).start();
+  }, [activeIndex]);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      let targetDate = new Date('2025-08-12');
+      
+      if (now > new Date('2025-08-17')) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      }
+      if (now > targetDate) {
+        targetDate = new Date('2025-08-27');
+      }
+
+      const difference = targetDate.getTime() - now.getTime();
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60)
+      };
+    };
 
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
@@ -75,43 +75,137 @@ const calculateTimeLeft = () => {
 
     return () => clearInterval(timer);
   }, []);
+
   const interpolateProgress = progress.interpolate({
-    inputRange: [0, onboarding.length - 1],
+    inputRange: [0, 2],
     outputRange: ['0%', '100%']
   });
-  const videoRef = useRef(null);
-const FirstSlide = () => (
-    <View className="items-center px-6 pt-10">
-      {mediaUrl && mediaType === 'video' ? (
-<Video
-  ref={videoRef}
-  source={{ uri: mediaUrl }}
-  style={{ width: width - 48, height: 250, borderRadius: 15 }}
-  resizeMode="cover"
-  isLooping
-  shouldPlay 
-/>
-      ) : (
+
+  // Reusable Shadow Style for Cards
+  const cardShadow = Platform.OS === 'ios' ? {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+  } : { elevation: 10 };
+
+  const SlideOne = () => (
+    <View style={{ width }} className="items-center px-6 pt-10">
+      <View style={cardShadow} className="w-full bg-white rounded-3xl p-2 mb-6">
         <Image 
-          source={mediaUrl ? { uri: mediaUrl } : excited}
-          className="w-full h-64"
-          resizeMode="contain"
-          style={{ borderRadius: 20 }}
+          source={mediaUrl ? { uri: mediaUrl } : nestJuniorLogo}
+          className="w-full h-56 rounded-2xl"
+          resizeMode="cover"
         />
-      )}
-       <Text className="text-2xl mx-4 mt-6 mb-2 font-JakartaExtraBold text-orange-400 text-center">
-                Drive Smart. Earn More. Stay connected!
-              </Text>
-              <View className="mt-4 space-y-3">
-                <FeatureItem text="Get favorited by riders ⭐" />
-                <FeatureItem text="Set your own pricing 💵 " />
-                <FeatureItem text="Driver Community In-app Social Media"/>
-                <FeatureItem text="In-app road tips & navigation 🗺️ "/>
-                <FeatureItem text="Advanced Emergency System 🆘"/>
-                <FeatureItem text="And so much more!"/>
-              </View>
       </View>
-)
+      
+      <View style={cardShadow} className="w-full bg-white/95 rounded-3xl p-6 pt-8">
+        <View className="bg-[#0FB1BB]/10 absolute -top-4 self-center px-5 py-2 rounded-full border border-[#0FB1BB]/20">
+          <Text className="text-[#028686] font-JakartaBold text-sm">Welcome to Nest Junior</Text>
+        </View>
+        <Text className="text-2xl font-JakartaExtraBold text-[#1E293B] text-center mb-6 leading-tight">
+          Make a Difference.{"\n"}
+          <Text className="text-[#0FB1BB]">Earn Consistently.</Text>
+        </Text>
+        <View className="space-y-4">
+          <FeatureItem text="Scheduled daily school runs 📅" />
+          <FeatureItem text="Premium fares for certified drivers 💵" />
+          <FeatureItem text="Rigorous safety & live monitoring 🛡️" />
+          <FeatureItem text="Direct parent-driver trust 🤝" />
+          <FeatureItem text="Advanced Emergency Protocol 🆘" />
+        </View>
+      </View>
+    </View>
+  );
+
+  const SlideTwo = () => (
+    <View style={{ width }} className="items-center px-6 pt-10">
+      <View style={cardShadow} className="w-full bg-white rounded-3xl p-2 mb-6">
+        <Image 
+          source={{uri: "https://www.autoeasy.com/car-image/mercedes-benz/e-class/2024/hero/front_angle_view.webp"}} 
+          className="w-full h-56 rounded-2xl bg-gray-50"
+          resizeMode="contain"
+        />
+      </View>
+
+      <View style={cardShadow} className="w-full bg-white/95 rounded-3xl p-6 pt-8">
+        <View className="bg-orange-500 absolute -top-4 self-center px-5 py-2 rounded-full shadow-sm">
+          <Text className="text-white font-JakartaBold text-sm">Fast-Track Certification 🛡️</Text>
+        </View>
+        <Text className="text-2xl font-JakartaExtraBold text-[#1E293B] text-center mb-3">
+          Become a Certified CareDriver
+        </Text>
+        <Text className="text-center text-[#64748B] font-JakartaMedium mb-6 leading-relaxed">
+          Join the elite fleet of trusted child logistics experts in Addis Ababa. Limited onboarding window!
+        </Text>
+        
+        <View className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex-row justify-between">
+          <CountdownBox value={timeLeft.days || 0} label="Days" />
+          <Text className="text-[#0FB1BB] font-JakartaBold text-2xl self-start mt-2">:</Text>
+          <CountdownBox value={timeLeft.hours || 0} label="Hours" />
+          <Text className="text-[#0FB1BB] font-JakartaBold text-2xl self-start mt-2">:</Text>
+          <CountdownBox value={timeLeft.minutes || 0} label="Mins" />
+          <Text className="text-[#0FB1BB] font-JakartaBold text-2xl self-start mt-2">:</Text>
+          <CountdownBox value={timeLeft.seconds || 0} label="Secs" /> 
+        </View>
+      </View>
+    </View>
+  );
+
+  const SlideThree = () => (
+    <View style={{ width }} className="items-center px-6 pt-10">
+      <View style={cardShadow} className="w-full bg-white rounded-3xl p-2 mb-6">
+        <Image 
+          source={onboarding[1]?.image || excited}
+          className="w-full h-56 rounded-2xl"
+          resizeMode="cover"
+        />
+      </View>
+
+      <View style={cardShadow} className="w-full bg-white/95 rounded-3xl p-6 pt-8 items-center">
+        <View className="bg-[#028686] absolute -top-4 self-center px-5 py-2 rounded-full shadow-sm">
+          <Text className="text-white font-JakartaBold text-sm">Start Earning 🚀</Text>
+        </View>
+        <Text className="text-2xl font-JakartaExtraBold text-[#1E293B] text-center mb-3">
+          Ready to Drive the Future?
+        </Text>
+        <Text className="text-center text-[#64748B] font-JakartaMedium mb-6 leading-relaxed">
+          Provide safe, reliable transport for students and secure your income today. Join the community.
+        </Text>
+        
+        <View className="w-full">
+          <CustomButton
+            title="Start Certification Process"
+            onPress={() => router.replace("/(auth)/register")}
+            colors={['#0FB1BB', '#028686']} 
+            className="w-full py-4 rounded-xl shadow-lg"
+            textClassName="text-white font-JakartaBold text-lg"
+          />
+        </View>
+      </View>
+    </View>
+  );
+
+  const slides = [<SlideOne key="1" />, <SlideTwo key="2" />, <SlideThree key="3" />];
+
+  const handleNext = () => {
+    if (isLastSlide) {
+      router.replace("/(auth)/register");
+    } else {
+      flatListRef.current?.scrollToIndex({
+        index: activeIndex + 1,
+        animated: true,
+      });
+    }
+  };
+
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    if (viewableItems.length > 0) {
+      setActiveIndex(viewableItems[0].index);
+    }
+  }).current;
+
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   return (
     <LinearGradient 
@@ -122,102 +216,57 @@ const FirstSlide = () => (
     >
       <SafeAreaView className="flex-1">
         {/* Header Section */}
-        <View className="flex-row justify-between items-center px-6 pt-4">
-          <View className="bg-[rgba(255,0,0,0.2)] rounded-full px-4 py-2">
-            <Text className="text-white text-center font-JakartaBold">🚖 Share is Coming! 🇪🇹</Text>
+        <View className="flex-row justify-between items-center px-6 pt-4 pb-2">
+          <View className="bg-white/20 rounded-full px-4 py-2 border border-white/30 backdrop-blur-md">
+            <Text className="text-white text-center font-JakartaBold text-sm tracking-wide">
+              🛡️ Nest Junior is Here! 🇪🇹
+            </Text>
           </View>
-          <TouchableOpacity onPress={() => router.replace("/(auth)/register")}>
-            <Text className="text-white font-JakartaSemiBold">Skip</Text>
+          <TouchableOpacity 
+            onPress={() => router.replace("/(auth)/register")}
+            className="px-3 py-1 bg-black/10 rounded-full"
+          >
+            <Text className="text-white font-JakartaSemiBold text-sm">Skip</Text>
           </TouchableOpacity>
         </View>
 
-        <Swiper
-          ref={swiperRef}
-          loop={false}
-          showsPagination={false}
-          onIndexChanged={(index) => {
-            setActiveIndex(index);
-            Animated.spring(progress, {
-              toValue: index,
-              useNativeDriver: false
-            }).start();
-          }}
-        >
-          {/* Slide 1 - Main Features */}
-          <FirstSlide />
-
-          {/* Slide 2 - Community & Offers */}
-          <View className="items-center px-6 pt-10">
-            <Image 
-        source={{uri: "https://www.autoeasy.com/car-image/mercedes-benz/e-class/2024/hero/front_angle_view.webp"}}
-              className="w-full h-64"
-              resizeMode="contain"
-            />
-            <LinearGradient
-              colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,1)']}
-              className="w-full rounded-3xl p-6 mt-8"
-            >
-              <View className="bg-orange-500 absolute -top-4 self-center px-4 py-2 rounded-full">
-                <Text className="text-white font-JakartaBold">Exclusive Launch Offer 🔥</Text>
-              </View>
-              <Text className="text-2xl font-JakartaExtraBold text-[#1E293B] text-center mt-4">
-                0% Commission for a full month!
-              </Text>
-              <Text className="text-center text-[#64748B] font-JakartaMedium mt-2">
-                You only have to pay 59 Birr once and it's free!
-              </Text>
-              <CountdownTimer />
-            </LinearGradient>
-          </View>
-
-          {/* Slide 3 - Final CTA */}
-          <View className="items-center px-6 pt-10">
-            <Image 
-    source={onboarding[1].image}
-              className="w-full h-64"
-              resizeMode="contain"
-            />
-            <LinearGradient
-              colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,1)']}
-              className="w-full rounded-3xl p-6 mt-8 items-center"
-            >
-              <Text className="text-2xl font-JakartaExtraBold text-[#1E293B] text-center">
-                Ready to Earn More? 💸
-              </Text>
-              <Text className="text-center text-[#64748B] font-JakartaMedium mt-4">
-                Join Ethiopia's first driver-centric ride platform
-              </Text>
-              <View className="w-full mt-6">
-                <CustomButton
-                  title="Claim Your Spot Now"
-                  onPress={() => router.replace("/(auth)/register")}
-                  colors={['#FF7F50', '#0286FF']}
-                  className="w-full py-4 rounded-xl"
-                  textClassName="text-white font-JakartaBold text-lg"
-                />
-              </View>
-            </LinearGradient>
-          </View>
-        </Swiper>
+        {/* Sliders */}
+        <FlatList
+          ref={flatListRef}
+          data={slides}
+          renderItem={({ item }) => item}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          keyExtractor={(_, index) => index.toString()}
+        />
 
         {/* Progress & Navigation */}
-        <View className="px-6 pb-8">
-          <View className="flex-row items-center justify-between mb-4">
-            <Animated.View 
-              style={{ width: interpolateProgress }}
-              className="h-1 bg-white rounded-full"
-            />
-            <View className="absolute w-full h-1 bg-white/20 rounded-full" />
+        <View className="px-6 pb-8 bg-transparent">
+          <View className="flex-row items-center justify-between mb-6">
+            <View className="relative w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
+              <Animated.View 
+                style={{ 
+                  width: interpolateProgress,
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                }}
+                className="bg-white rounded-full"
+              />
+            </View>
           </View>
           
           <CustomButton
-            title={isLastSlide ? "Start Driving" : "Next →"}
-            onPress={() => isLastSlide 
-              ? router.replace("/(auth)/register") 
-              : swiperRef.current?.scrollBy(1)}
-            colors={isLastSlide ? ['#FF7F50', '#FFAA00'] : ['transparent', 'transparent']}
-            className={`w-full py-4 rounded-xl ${!isLastSlide && 'border-2 border-white'}`}
-            textClassName={`font-JakartaBold text-lg ${!isLastSlide && 'text-white'}`}
+            title={isLastSlide ? "Get Certified Now" : "Continue"}
+            onPress={handleNext}
+            colors={isLastSlide ? ['#FF8C00', '#FF7F50'] : ['transparent', 'transparent']}
+            className={`w-full py-4 rounded-xl ${!isLastSlide && 'border-2 border-white bg-white/10'}`}
+            textClassName={`font-JakartaBold text-lg ${!isLastSlide ? 'text-white' : 'text-white'}`}
           />
         </View>
       </SafeAreaView>
@@ -225,22 +274,30 @@ const FirstSlide = () => (
   );
 };
 
+// --- MINI COMPONENTS ---
+
 const FeatureItem = ({ text }) => (
-  <View className="flex-row items-center space-x-3 ml-3">
-    <View className="w-2 h-2 bg-orange-500 rounded-full" />
-    <Text className="text-white text-lg font-JakartaMedium">{text}</Text>
+  <View className="flex-row items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+    <View className="w-8 h-8 bg-teal-50 rounded-full items-center justify-center mr-3">
+      <View className="w-2.5 h-2.5 bg-[#0FB1BB] rounded-full" />
+    </View>
+    <Text className="text-[#334155] flex-1 text-sm font-JakartaSemiBold leading-5">
+      {text}
+    </Text>
   </View>
 );
 
-
-  const CountdownBox = ({ value, label }: { value: number; label: string }) => (
-    <View className="items-center ml-2">
-      <View className="bg-[#EE8600] px-4 py-2 rounded-lg">
-        <Text className="text-white font-JakartaBold text-xl">
-          {String(value).padStart(2, '0')}
-        </Text>
-      </View>
-      <Text className="text-[#64748B] text-xs font-JakartaMedium mt-1">{label}</Text>
+const CountdownBox = ({ value, label }) => (
+  <View className="items-center flex-1">
+    <View className="bg-white border border-teal-100 shadow-sm w-full py-3 rounded-xl items-center justify-center">
+      <Text className="text-[#0FB1BB] font-JakartaExtraBold text-2xl">
+        {String(value).padStart(2, '0')}
+      </Text>
     </View>
-  );
+    <Text className="text-[#64748B] text-[10px] uppercase tracking-wider font-JakartaBold mt-2">
+      {label}
+    </Text>
+  </View>
+);
+
 export default Welcome;

@@ -4,12 +4,12 @@ import { Modal, View, Text, TouchableOpacity, StyleSheet, Alert, TextInput, Flat
 import { useRouter } from 'expo-router';
 import uuid from 'react-native-uuid';
 import auth from '@react-native-firebase/auth';
-import AWS from "aws-sdk";
-/** 
- * Refill Credit Modal
+import { Picker } from "@react-native-picker/picker";
+
+/** * Refill Credit Modal
  * Motivates/informs the driver to refill credit by highlighting the value of services offered.
  */
-export const RefillCreditModal = ({ visible, onRefillPress }: { visible: boolean; onRefillPress: () => void }) => {
+export const RefillCreditModal = ({ visible, onRefillPress }) => {
   return (
     <Modal visible={visible} transparent={true} animationType="fade">
       <View style={styles.modalContainer}>
@@ -32,7 +32,7 @@ export const RefillCreditModal = ({ visible, onRefillPress }: { visible: boolean
  * Informs the driver that their account has been suspended.
  * Optionally, routes to an authentication form to resolve issues.
  */
-export const SuspensionModal = ({ visible }: { visible: boolean }) => {
+export const SuspensionModal = ({ visible }) => {
   const router = useRouter();
   return (
     <Modal visible={visible} transparent={true} animationType="fade">
@@ -43,7 +43,7 @@ export const SuspensionModal = ({ visible }: { visible: boolean }) => {
             Your account has been suspended until further notice. If you believe this is a mistake, please reach out to our support team.
           </Text>
           {/* Option to route to a support/authentication form */}
-                    <Link href="https://t.me/sharedriverssupport" style={styles.link}>
+          <Link href="https://t.me/sharedriverssupport" style={styles.link}>
             <Text style={styles.linkText}>Contact Support</Text>
           </Link>
           {/* Alternatively, you can remove the button to lock the user out entirely. */}
@@ -57,7 +57,7 @@ export const SuspensionModal = ({ visible }: { visible: boolean }) => {
  * Update App Modal
  * Forces the user to update the app by displaying a non-dismissible message.
  */
-export const UpdateAppModal = ({ visible }: { visible: boolean }) => {
+export const UpdateAppModal = ({ visible }) => {
   return (
     <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={() => {}}>
       <View style={styles.modalContainer}>
@@ -73,21 +73,15 @@ export const UpdateAppModal = ({ visible }: { visible: boolean }) => {
   );
 };
 
-AWS.config.update({
-  region: process.env.EXPO_PUBLIC_R, 
-  accessKeyId: process.env.EXPO_PUBLIC_AI,
-  secretAccessKey: process.env.EXPO_PUBLIC_SAI,
-      // Disable CRC32 validation to prevent integrity check errors
-    dynamoDbCrc32: false,
-});
-//
-export const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 const CreatePostModal = ({ visible, onClose, onPostCreated }) => {
   const user = auth().currentUser;
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [loading, setLoading] = useState(false); // Prevent multiple submissions
+  const [category, setCategory] = useState(''); // Added to prevent Picker crash
+  const [loading, setLoading] = useState(false); 
+
+  const categories = ["General", "Traffic Jam", "Road Closed", "Alerts"]; // Mock categories
 
   // Basic validation: disallow certain characters
   const validateText = (text) => {
@@ -117,46 +111,46 @@ const CreatePostModal = ({ visible, onClose, onPostCreated }) => {
       return;
     }
 
-    setLoading(true); // Disable button to prevent duplicate requests
+    setLoading(true); 
 
-    // Generate unique postId and createdAt timestamp (epoch seconds)
     const postId = uuid.v4();
-   const createdAt = Math.floor(Date.now() / 1000);
+    const createdAt = Math.floor(Date.now() / 1000);
     const randomDigits = Math.floor(Math.random() * 9000) + 1000;
     const author = `@${user?.displayName || 'Anonymous'}${randomDigits}`;
 
-    const params = {
-      TableName: 'CommunityPosts',
-      Item: {
-        postId,
-        createdAt,
-        author,
-        title,
-        content,
-        karma: 0,
-        comments: 0,
-      },
+    const newPost = {
+      postId,
+      createdAt,
+      author,
+      title,
+      content,
+      category,
+      karma: 0,
+      comments: 0,
     };
 
     try {
-      await dynamoDB.put(params).promise();
+      // MOCK: Simulate network delay instead of saving to DynamoDB
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      console.log("MOCK: Post created successfully", newPost);
+      
       Alert.alert('Success', 'Post created successfully.');
 
       // Reset input fields
       setTitle('');
       setContent('');
+      setCategory('');
 
       // Ensure UI updates properly
-      onPostCreated && onPostCreated();
+      if (onPostCreated) onPostCreated();
 
       // Close modal only after all state updates
       setTimeout(() => {
         setLoading(false);
         onClose();
-      }, 200); // Small delay to allow UI to refresh
+      }, 200); 
 
     } catch (error) {
-
       Alert.alert('Error', 'Failed to create post.');
       setLoading(false);
     }
@@ -165,16 +159,16 @@ const CreatePostModal = ({ visible, onClose, onPostCreated }) => {
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Create a Post</Text>
+        <View style={modalStyles.modalContainer}>
+          <Text style={modalStyles.modalTitle}>Create a Post</Text>
           <TextInput
-            style={styles.input}
+            style={modalStyles.input}
             placeholder="Title"
             value={title}
             onChangeText={setTitle}
           />
           <TextInput
-            style={styles.input}
+            style={modalStyles.input}
             placeholder="Write something..."
             value={content}
             onChangeText={setContent}
@@ -189,14 +183,16 @@ const CreatePostModal = ({ visible, onClose, onPostCreated }) => {
                 <Picker.Item key={index} label={cat} value={cat} />
               ))}
             </Picker>
-
           </View>
-          <TouchableOpacity style={styles.button} onPress={handleCreatePost} disabled={loading}>
-            <Text style={styles.buttonText}>{loading ? 'Posting...' : 'Post'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
+          
+          <View style={modalStyles.buttonRow}>
+            <TouchableOpacity style={modalStyles.button} onPress={handleCreatePost} disabled={loading}>
+              <Text style={modalStyles.buttonText}>{loading ? 'Posting...' : 'Post'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[modalStyles.button, modalStyles.cancelButton]} onPress={onClose}>
+              <Text style={modalStyles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -208,22 +204,19 @@ const CommentsModal = ({ visible, onClose, postId }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
 
-  // Fetch comments for the given postId using a DynamoDB query
+  // Fetch comments - MOCKED
   const fetchComments = async () => {
-    const params = {
-      TableName: 'Comments',
-      KeyConditionExpression: 'postId = :pid',
-      ExpressionAttributeValues: {
-        ':pid': postId,
-      },
-      ScanIndexForward: false, // Sort descending
-    };
-
     try {
-      const data = await dynamoDB.query(params).promise();
-      setComments(data.Items || []);
+      console.log("MOCK: Fetching comments for postId:", postId);
+      // Simulating database response with a dummy comment
+      setComments([{
+        postId,
+        commentId: 'mock-comment-1',
+        author: '@ShareCommunity007',
+        content: 'This is a mocked comment! Everything is working visually.',
+        createdAt: Math.floor(Date.now() / 1000) - 3600 // 1 hour ago
+      }]);
     } catch (error) {
-
       Alert.alert('Error', 'Failed to load comments.');
     }
   };
@@ -232,7 +225,7 @@ const CommentsModal = ({ visible, onClose, postId }) => {
     if (visible && postId) {
       fetchComments();
     }
-  }, [visible, postId]); // Fetch comments when modal becomes visible or postId changes
+  }, [visible, postId]); 
 
   const handleAddComment = async () => {
     if (!newComment.trim()) {
@@ -246,28 +239,26 @@ const CommentsModal = ({ visible, onClose, postId }) => {
       return;
     }
 
-    const commentId = uuid.v4(); // Ensure correct UUID usage
+    const commentId = uuid.v4(); 
     const createdAt = Math.floor(Date.now() / 1000);
     const randomDigits = Math.floor(Math.random() * 9000) + 1000;
     const author = `@${user?.displayName || 'Anonymous'}${randomDigits}`;
 
-    const params = {
-      TableName: 'Comments',
-      Item: {
-        postId,
-        commentId,
-        author,
-        content: newComment,
-        createdAt,
-      },
+    const addedComment = {
+      postId,
+      commentId,
+      author,
+      content: newComment,
+      createdAt,
     };
 
     try {
-      await dynamoDB.put(params).promise();
-      setComments([{ postId, commentId, author, content: newComment, createdAt }, ...comments]);
+      // MOCK: Bypass DynamoDB entirely and just push to local React state
+      console.log("MOCK: Comment submitted successfully", addedComment);
+      
+      setComments([addedComment, ...comments]);
       setNewComment('');
     } catch (error) {
-
       Alert.alert('Error', 'Failed to add comment.');
     }
   };
@@ -275,47 +266,47 @@ const CommentsModal = ({ visible, onClose, postId }) => {
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Comments</Text>
+        <View style={modalStyles.modalContainer}>
+          <Text style={modalStyles.modalTitle}>Comments</Text>
 
           <FlatList
             data={comments}
             keyExtractor={(item) => item.commentId}
             renderItem={({ item }) => (
-              <View style={styles.commentItem}>
-                <Text style={styles.commentAuthor}>{item.author}</Text>
-                <Text style={styles.commentContent}>{item.content}</Text>
-                <Text style={styles.commentTimestamp}>
+              <View style={localStyles.commentItem}>
+                <Text style={localStyles.commentAuthor}>{item.author}</Text>
+                <Text style={localStyles.commentContent}>{item.content}</Text>
+                <Text style={localStyles.commentTimestamp}>
                   {new Date(item.createdAt * 1000).toLocaleString()}
                 </Text>
               </View>
             )}
           />
 
-          <View style={styles.inputRow}>
+          <View style={localStyles.inputRow}>
             <TextInput
-              style={styles.input}
+              style={[modalStyles.input, { flex: 1, marginBottom: 0, marginRight: 10 }]}
               placeholder="Add a comment..."
               value={newComment}
               onChangeText={setNewComment}
             />
-            <TouchableOpacity style={styles.sendButton} onPress={handleAddComment}>
-              <Text style={styles.sendButtonText}> send </Text>
+            <TouchableOpacity style={localStyles.sendButton} onPress={handleAddComment}>
+              <Text style={localStyles.sendButtonText}>Send</Text>
             </TouchableOpacity>
           </View>
+          
+          <TouchableOpacity style={[modalStyles.button, modalStyles.cancelButton, { marginTop: 15 }]} onPress={onClose}>
+            <Text style={modalStyles.buttonText}>Close</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
   );
 };
 
-
-
-
-export {CreatePostModal, CommentsModal};
+export { CreatePostModal, CommentsModal };
 
 const modalStyles = StyleSheet.create({
-
   modalContainer: {
     width: '90%',
     backgroundColor: '#FFF',
@@ -358,6 +349,12 @@ const modalStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -391,7 +388,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-    link: {
+  link: {
     backgroundColor: "#007AFF",
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -402,4 +399,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+});
+
+// Added to prevent crashing from missing styles in snippet
+const localStyles = StyleSheet.create({
+  commentItem: {
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  commentAuthor: {
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 2,
+  },
+  commentContent: {
+    color: '#555',
+    marginBottom: 5,
+  },
+  commentTimestamp: {
+    fontSize: 12,
+    color: '#999',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  sendButton: {
+    backgroundColor: '#0F52BA',
+    padding: 10,
+    borderRadius: 5,
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  }
 });

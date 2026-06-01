@@ -1,6 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
+  // 🚨 THIS IS THE MAGIC LINE YOU WERE MISSING FOR NATIVEWIND V4 🚨
+  presets: [require("nativewind/preset")],
   theme: {
     extend: {
       fontFamily: {

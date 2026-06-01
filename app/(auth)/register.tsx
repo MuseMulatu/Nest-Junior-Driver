@@ -8,7 +8,7 @@ import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const API_BASE = 'https://api.zabiya.com/api/nest-junior/auth';
-const TELEGRAM_BOT_URL = 'https://t.me/YourNewNestJuniorBot'; // Update to your bot link
+const TELEGRAM_BOT_URL = 'https://t.me/NestJuniorBot'; // Update to your bot link
 
 const Colors = { primaryOrange: "#FF8C00", secondaryTeal: "#0FB1BB", textDark: "#1A202C", textMedium: "#4A5568", backgroundWhite: "#FFFFFF", borderLight: "#E2E8F0" };
 

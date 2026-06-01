@@ -71,6 +71,30 @@ export function formatTime(minutes: number): string {
   }
 }
 
+export const timeFromNow = (dateInput) => {
+  if (!dateInput) return '';
+  
+  const timeMs = typeof dateInput === 'number' ? dateInput : new Date(dateInput).getTime();
+  const deltaSeconds = Math.round((Date.now() - timeMs) / 1000);
+  
+  if (deltaSeconds < 60) return 'Just now';
+
+  const cutoffs = [
+    { threshold: 60, unit: 'minute' },
+    { threshold: 3600, unit: 'hour' },
+    { threshold: 86400, unit: 'day' },
+    { threshold: 2592000, unit: 'month' },
+    { threshold: 31536000, unit: 'year' }
+  ];
+
+  for (let i = cutoffs.length - 1; i >= 0; i--) {
+    if (deltaSeconds >= cutoffs[i].threshold) {
+      const value = Math.round(deltaSeconds / cutoffs[i].threshold);
+      return `${value} ${cutoffs[i].unit}${value > 1 ? 's' : ''} ago`;
+    }
+  }
+};
+
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
   const day = date.getDate();

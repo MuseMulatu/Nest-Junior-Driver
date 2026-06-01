@@ -5146,11 +5146,6 @@ expo-asset@~56.0.15:
     "@expo/image-utils" "^0.10.1"
     expo-constants "~56.0.16"
 
-expo-av@~14.0.7:
-  version "14.0.7"
-  resolved "https://registry.npmjs.org/expo-av/-/expo-av-14.0.7.tgz#deb967325e58b2c4d408f5d76a7ccb269442cba1"
-  integrity sha512-FvKZxyy+2/qcCmp+e1GTK3s4zH8ZO1RfjpqNxh7ARlS1oH8HPtk1AyZAMo52tHz3yQ3UIqxQ2YbI9CFb4065lA==
-
 expo-background-fetch@~56.0.16:
   version "56.0.16"
   resolved "https://registry.npmjs.org/expo-background-fetch/-/expo-background-fetch-56.0.16.tgz#eed6264a258904158c75db5500f06c4479c0749e"
