@@ -156,72 +156,91 @@ const handleLocationUpdate = (loc: { latitude: number, longitude: number }) => {
   }
 };
 
-// 3. Update the executeAutomatedBoardingCapture function
+// 5. GEOFENCE AUTOMATED CAPTURE
 const executeAutomatedBoardingCapture = async (subId: string) => {
   setIsCameraBusy(true); setControlsLocked(true); setPendingGeofenceCapture(null); 
   try {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePhoto({ flash: 'off' });
-      const uploadedUrl = await uploadImageToCloudinary(`file://${photo.path}`);
       
-      if (uploadedUrl) {
-        await axios.post(`${API_BASE}/driver/milestone`, { 
-          routeSubscriptionId: subId, 
-          photoUrl: uploadedUrl,
-          type: 'BOARDING'
-        });
+      // 🚨 BULLETPROOF FIX: Check for .path, .uri, or a raw string
+      const rawPath = photo?.path || photo?.uri || (typeof photo === 'string' ? photo : '');
+      
+      if (rawPath) {
+        const validUri = rawPath.startsWith('file://') ? rawPath : `file://${rawPath}`;
+        const uploadedUrl = await uploadImageToCloudinary(validUri);
+        
+        if (uploadedUrl) {
+          await axios.post(`${API_BASE}/driver/milestone`, { 
+            routeSubscriptionId: subId, 
+            photoUrl: uploadedUrl,
+            type: 'BOARDING'
+          });
+        }
       }
     }
   } catch (e) {
     console.error("Camera bypass error", e);
   } finally {
-    // 🚨 We removed setManifest(prev => prev.slice(1)) so the route never ends!
-    setTestLock(true); // Locks the geofence so it doesn't fire again
+    setTestLock(true); 
     setControlsLocked(false); 
     setIsCameraBusy(false); 
   }
-};
-// 3. PERIODIC SNAPSHOT LOGIC
-  const executePeriodicSnapshot = async () => {
-    if (isStreaming || isCameraBusy || !cameraRef.current || manifest.length === 0) return null;
-    
-    try {
-      setIsCameraBusy(true);
-      console.log("📸 Taking 20-minute periodic snapshot...");
-      
-      let photo;
-      
-      // Safely check which method your specific version of Vision Camera supports
-      if (typeof cameraRef.current.takePhoto === 'function') {
-        photo = await cameraRef.current.takePhoto({ flash: 'off' });
-      } else if (typeof cameraRef.current.takeSnapshot === 'function') {
-        photo = await cameraRef.current.takeSnapshot({ quality: 85 });
-      } else {
-        throw new Error("Camera methods not bound. The OS culled the hidden camera view.");
-      }
-      
-      // 🚨 FIX: Safely normalize the URI right before sending to Cloudinary
-      const validUri = photo.path.startsWith('file://') ? photo.path : `file://${photo.path}`;
-      
-      const uploadedUrl = await uploadImageToCloudinary(validUri);
-      
-      if (uploadedUrl) {
-        await axios.post(`${API_BASE}/driver/milestone`, { 
-          routeSubscriptionId: manifest[0].id, 
-          photoUrl: uploadedUrl, 
-          type: 'PERIODIC' 
-        });
-        return uploadedUrl;
-      }
-      return null;
-    } catch (e) {
-      console.error("Periodic Snapshot Failed:", e);
-      return null;
-    } finally {
-      setIsCameraBusy(false);
+};// 3. PERIODIC SNAPSHOT LOGIC
+const executePeriodicSnapshot = async () => {
+  if (isStreaming || isCameraBusy || manifest.length === 0) return null;
+
+  try {
+    setIsCameraBusy(true);
+    console.log("📸 Taking 20-minute periodic snapshot...");
+
+    if (!cameraRef.current) {
+      throw new Error("Camera ref is null");
     }
-  };
-  
+
+    let photo;
+
+    // 1. Try hardware capture first (Fastest, highest quality)
+    if (typeof cameraRef.current.takePhoto === 'function') {
+      photo = await cameraRef.current.takePhoto({ flash: 'off' });
+    } 
+    // 2. Fallback to UI Snapshot (Will NOW work because we gave the view a 200x200 size!)
+    else if (typeof cameraRef.current.takeSnapshot === 'function') {
+      console.log("⚠️ takePhoto not supported on this device. Falling back to takeSnapshot...");
+      photo = await cameraRef.current.takeSnapshot({ quality: 85 });
+    } 
+    // 3. Absolute failure state
+    else {
+      throw new Error("Neither takePhoto nor takeSnapshot are bound to the camera hardware.");
+    }
+
+    // 🚨 BULLETPROOF FIX: Check for .path, .uri, or a raw string
+    const rawPath = photo?.path || photo?.uri || (typeof photo === 'string' ? photo : '');
+    
+    if (!rawPath) {
+      throw new Error("Camera returned an empty file.");
+    }
+
+    const validUri = rawPath.startsWith('file://') ? rawPath : `file://${rawPath}`;
+    const uploadedUrl = await uploadImageToCloudinary(validUri);
+
+    if (uploadedUrl) {
+      await axios.post(`${API_BASE}/driver/milestone`, { 
+        routeSubscriptionId: manifest[0].id, 
+        photoUrl: uploadedUrl, 
+        type: 'PERIODIC' 
+      });
+      return uploadedUrl;
+    }
+    
+    return null;
+  } catch (e) {
+    console.error("Periodic Snapshot Failed:", e);
+    return null;
+  } finally {
+    setIsCameraBusy(false);
+  }
+};
   useEffect(() => {
     const snapshotInterval = setInterval(executePeriodicSnapshot, 20 * 60 * 1000);
     return () => clearInterval(snapshotInterval);
@@ -428,14 +447,17 @@ const styles = StyleSheet.create({
   pipVideo: { flex: 1 },
   liveBadge: { position: 'absolute', top: 5, right: 5, backgroundColor: Colors.dangerRed, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   liveBadgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
-  hiddenCameraContainer: { 
-    position: 'absolute', 
-    top: 0, 
-    left: 0, 
-    width: 100, 
-    height: 100, 
-    zIndex: -1 
-  },
+hiddenCameraContainer: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: 200,          // 🚨 CRITICAL: Gives takeSnapshot real pixels to capture
+  height: 200,         // 🚨 CRITICAL: Gives takeSnapshot real pixels to capture
+  zIndex: -1,          // Hides it behind the map
+  elevation: -1,       // Hides it behind the map on Android
+  pointerEvents: 'none',
+  overflow: 'hidden'
+},
   hiddenCamera: { flex: 1 },
   liveIndicator: { position: 'absolute', top: 120, left: 20, right: 20, backgroundColor: 'rgba(239, 68, 68, 0.95)', padding: 12, borderRadius: 8, alignItems: 'center' },
   liveText: { color: '#FFF', fontWeight: 'bold' },
