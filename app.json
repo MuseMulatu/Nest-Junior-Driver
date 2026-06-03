@@ -60,7 +60,12 @@
         {
           "icon": "./assets/images/icon.png",
           "color": "#ffffff",
-          "defaultChannelId": "ride_notifications"
+          "defaultChannelId": "ride_notifications",
+          "sounds": [
+            "./assets/sounds/new_follower1.wav",
+            "./assets/sounds/ride_request2.mp3",
+            "./assets/sounds/new_follower2.m4a"
+          ]
         }
       ],
       [

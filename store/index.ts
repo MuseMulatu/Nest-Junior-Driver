@@ -260,3 +260,10 @@ export const useEmergencyStore = create(set => ({
   setTrackingData: (trackedDriver) => set({ trackedDriver }),
   clearTracking: () => set({ trackedDriver: null }),
 }));
+
+export const useLookInStore = create((set) => ({
+  isBroadcasting: false,
+  roomId: null,
+  startLookIn: (roomId: string) => set({ isBroadcasting: true, roomId }),
+  stopLookIn: () => set({ isBroadcasting: false, roomId: null }),
+}));

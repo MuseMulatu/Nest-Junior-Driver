@@ -1,28 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import axios from 'axios';
 
 const Colors = { orange: "#FF8C00", teal: "#0FB1BB", dark: "#1A202C", gray: "#718096", lightBg: "#F7FAFC" };
+const API_BASE = 'https://api.zabiya.com/api/nest-junior';
 
 export default function DriverHomeScreen() {
   const [isGatePassed, setIsGatePassed] = useState(false);
   const [gateModalOpen, setGateModalOpen] = useState(false);
   
-  // Checklist verification matrices
+  // --- MANIFEST STATE ---
+  const [manifestCount, setManifestCount] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [checklist, setChecklist] = useState({ dashcam: false, boosterSeats: false, safetyDoors: false });
+
+  // --- FETCH ASSIGNED ROUTES ON LOAD ---
+  useEffect(() => {
+    const fetchManifestSummary = async () => {
+      const driver = auth().currentUser;
+      if (!driver) return;
+
+      try {
+        const res = await axios.get(`${API_BASE}/driver/manifest?driverId=${driver.uid}`);
+        setManifestCount(res.data.length);
+      } catch (error) {
+        console.error("Failed to fetch routes", error);
+        setManifestCount(0);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchManifestSummary();
+  }, []);
 
   const toggleCheck = (key: keyof typeof checklist) => {
     setChecklist(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-const commitSafetyLog = async () => {
+  const commitSafetyLog = async () => {
     const { dashcam, boosterSeats, safetyDoors } = checklist;
     if (!dashcam || !boosterSeats || !safetyDoors) {
-      Alert.alert("Safety Enforcement", "All mandatory safety elements must be functional before picking up students.");
+      Alert.alert("Safety Enforcement", "All mandatory safety elements must be checked before picking up students.");
       return;
     }
 
@@ -31,7 +56,6 @@ const commitSafetyLog = async () => {
 
     const todayStr = new Date().toISOString().split('T')[0];
     
-    // 3. Lock signed security token payload inside Firestore for liability protection
     try {
       await firestore()
         .collection('compliance_logs')
@@ -45,73 +69,89 @@ const commitSafetyLog = async () => {
         });
 
       setIsGatePassed(true);
-      setGateModalOpen(false);
+      setGateModalOpen(false); // Closes the modal
     } catch (error) {
       Alert.alert("Sync Error", "Could not save safety log. Check your connection.");
-      console.error(error);
     }
   };
+
+  const hasRoutesToday = manifestCount !== null && manifestCount > 0;
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollLayout}>
         <Text style={styles.title}>CareDriver Dashboard</Text>
         
-        {/* Status Indicators */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Daily Gate Status</Text>
           <View style={styles.row}>
-            {/* Swapped ShieldCheck */}
             <MaterialCommunityIcons name="shield-check" color={isGatePassed ? Colors.teal : Colors.gray} size={24} />
             <Text style={[styles.statusText, { color: isGatePassed ? Colors.teal : Colors.dark }]}>
               {isGatePassed ? "Verified Safety Pass Locked" : "Pre-Trip Verification Required"}
             </Text>
           </View>
           
-          {!isGatePassed && (
+          {/* Hide the Safety Gate if they have no routes anyway */}
+          {!isGatePassed && hasRoutesToday && (
             <TouchableOpacity style={styles.gateBtn} onPress={() => setGateModalOpen(true)}>
-              <Text style={styles.btnText}>Open Safety Gate</Text>
+              <Text style={styles.btnText}>Open Safety Verification</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* Dynamic Route Sheet Card */}
-        <View style={[styles.card, { opacity: isGatePassed ? 1 : 0.5 }]}>
+        <View style={[styles.card, { opacity: isGatePassed && hasRoutesToday ? 1 : 0.5 }]}>
           <Text style={styles.cardTitle}>Assigned Shifts</Text>
-          <Text style={styles.desc}>Amharic and English-mapped routes for municipal schools.</Text>
+          
+          {isLoading ? (
+            <ActivityIndicator size="small" color={Colors.teal} />
+          ) : hasRoutesToday ? (
+             <Text style={styles.desc}>You have {manifestCount} active pickups securely routed for today's sequence.</Text>
+          ) : (
+             <Text style={[styles.desc, { color: Colors.orange, fontWeight: 'bold' }]}>You have no assigned pickups today, or all parents have skipped today's ride.</Text>
+          )}
           
           <TouchableOpacity 
-            style={[styles.startBtn, { backgroundColor: isGatePassed ? Colors.orange : Colors.gray }]}
-            disabled={!isGatePassed}
+            style={[styles.startBtn, { backgroundColor: isGatePassed && hasRoutesToday ? Colors.orange : Colors.gray }]}
+            disabled={!isGatePassed || !hasRoutesToday}
             onPress={() => router.push('/(root)/active-ride')}
           >
-            {/* Swapped Play */}
             <FontAwesome5 name="play" color="#FFF" size={16} />
-            <Text style={styles.startBtnText}>Initialize Morning Sequence</Text>
+            <Text style={styles.startBtnText}>Initialize Sequence</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* BLOCKING COMPLIANCE MODAL GATE */}
-      <Modal visible={gateModalOpen} animationType="slide" transparent={true}>
+      {/* FULLY RESTORED SAFETY MODAL */}
+      <Modal 
+        visible={gateModalOpen} 
+        animationType="slide" 
+        transparent={true}
+        onRequestClose={() => setGateModalOpen(false)} // Handles Android physical back button
+      >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>🛡️ Pre-Trip Liability Check</Text>
+            
+            {/* Close Button to prevent getting stuck */}
+            <TouchableOpacity style={styles.closeButton} onPress={() => setGateModalOpen(false)}>
+              <Ionicons name="close" size={24} color={Colors.gray} />
+            </TouchableOpacity>
+
+            <Text style={styles.modalTitle}>🛡️ Pre-Trip Safety Check</Text>
             
             <TouchableOpacity style={styles.checkRow} onPress={() => toggleCheck('dashcam')}>
-              {/* Swapped CheckCircle */}
               <Ionicons name="checkmark-circle" size={24} color={checklist.dashcam ? Colors.teal : Colors.gray} />
               <Text style={styles.checkLabel}>Dashcam actively loop-recording?</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.checkRow} onPress={() => toggleCheck('boosterSeats')}>
               <Ionicons name="checkmark-circle" size={24} color={checklist.boosterSeats ? Colors.teal : Colors.gray} />
-              <Text style={styles.checkLabel}>Booster seats safety-locked?</Text>
+              <Text style={styles.checkLabel}>Booster seats safely locked?</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.checkRow} onPress={() => toggleCheck('safetyDoors')}>
               <Ionicons name="checkmark-circle" size={24} color={checklist.safetyDoors ? Colors.teal : Colors.gray} />
-              <Text style={styles.checkLabel}>Child security safety doors activated?</Text>
+              <Text style={styles.checkLabel}>Child security locks activated?</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.commitBtn} onPress={commitSafetyLog}>
@@ -124,7 +164,6 @@ const commitSafetyLog = async () => {
   );
 }
 
-// Ensure you have these styles defined, or adjust as needed
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.lightBg },
   scrollLayout: { padding: 20 },
@@ -138,9 +177,12 @@ const styles = StyleSheet.create({
   desc: { color: Colors.gray, marginBottom: 15, lineHeight: 20 },
   startBtn: { flexDirection: 'row', padding: 15, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 10 },
   startBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  
+  // Modal Styles
   modalContainer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalContent: { backgroundColor: '#FFF', padding: 24, borderRadius: 16 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  modalContent: { backgroundColor: '#FFF', padding: 24, borderRadius: 16, position: 'relative' },
+  closeButton: { position: 'absolute', top: 16, right: 16, zIndex: 10 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 25, textAlign: 'center', marginTop: 10, color: Colors.dark },
   checkRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 12 },
   checkLabel: { fontSize: 16, flex: 1, color: Colors.dark },
   commitBtn: { backgroundColor: Colors.teal, padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 10 },

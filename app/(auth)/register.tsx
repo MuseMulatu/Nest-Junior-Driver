@@ -6,9 +6,11 @@ import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import axios from 'axios';
 import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 
 const API_BASE = 'https://api.zabiya.com/api/nest-junior/auth';
-const TELEGRAM_BOT_URL = 'https://t.me/NestJuniorBot'; // Update to your bot link
+const TELEGRAM_BOT_URL = 'https://t.me/NestJuniorBot?start=driver';
 
 const Colors = { primaryOrange: "#FF8C00", secondaryTeal: "#0FB1BB", textDark: "#1A202C", textMedium: "#4A5568", backgroundWhite: "#FFFFFF", borderLight: "#E2E8F0" };
 
@@ -23,10 +25,43 @@ export default function DriverRegisterScreen() {
 
   useEffect(() => {
     GoogleSignin.configure({
-      webClientId: '421773572020-8vec80jsioinp00t22kmoesactnrhhn1.apps.googleusercontent.com', // Match your Firebase config
+      webClientId: '421773572020-8vec80jsioinp00t22kmoesactnrhhn1.apps.googleusercontent.com', 
       offlineAccess: true,
     });
   }, []);
+
+  // --- EXPO TOKEN EXTRACTOR ---
+  const registerForPushNotifications = async () => {
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      
+      if (finalStatus !== 'granted') {
+        console.warn('Push notification permissions not granted.');
+        return null;
+      }
+
+      let projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+
+      if (!projectId) {
+        console.log("Could not infer Project ID from manifest, using hardcoded fallback.");
+        projectId = "f8667242-608a-4291-8e2e-ececfefbc33f";
+      }
+      
+      if (!projectId) return null;
+
+      const tokenData = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+      return tokenData;
+    } catch (error) {
+      console.error("Error generating push token:", error);
+      return null;
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -68,12 +103,16 @@ export default function DriverRegisterScreen() {
       const user = auth().currentUser;
       if (!user) throw new Error("Firebase session lost");
 
-      // CALLS THE DRIVER-SPECIFIC ENDPOINT
+      // 1. Fetch the real Expo Token
+      let expoToken = await registerForPushNotifications();
+
+      // 2. Call the driver-specific endpoint, including the new token
       await axios.post(`${API_BASE}/driver/verify-otp-and-register`, {
           firebaseUid: user.uid,
           name,
           phone,
-          otp
+          otp,
+          expoPushToken: expoToken // <-- Token injected here
       });
       
       // Move to Vehicle Registration Form
@@ -139,18 +178,18 @@ export default function DriverRegisterScreen() {
   );
 }
 
-// Reuse the exact same clean styles from your parent app here.
+// Ensure you have your styles defined down here
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.backgroundWhite },
-  header: { paddingBottom: 20 },
-  content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 20 },
-  title: { fontSize: 28, fontFamily: 'Jakarta-Bold', color: Colors.textDark, marginBottom: 8 },
-  subtitle: { fontSize: 15, fontFamily: 'Jakarta-Medium', color: Colors.textMedium, marginBottom: 32, lineHeight: 22 },
-  botLinkText: { fontSize: 13, fontFamily: 'Jakarta-Bold', color: Colors.secondaryTeal, textAlign: 'center' },
-  googleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.backgroundWhite, paddingVertical: 16, borderRadius: 12, borderWidth: 1, borderColor: Colors.borderLight, elevation: 2 },
+  content: { padding: 24, flexGrow: 1, justifyContent: 'center' },
+  header: { position: 'absolute', top: 10, left: 24, zIndex: 10 },
+  title: { fontSize: 32, fontWeight: 'bold', color: Colors.textDark, marginBottom: 8, marginTop: 40 },
+  subtitle: { fontSize: 16, color: Colors.textMedium, marginBottom: 32 },
+  input: { backgroundColor: Colors.borderLight, padding: 16, borderRadius: 12, fontSize: 16, marginBottom: 16, color: Colors.textDark },
+  botLinkText: { color: Colors.secondaryTeal, fontSize: 14, fontWeight: '600' },
+  btn: { backgroundColor: Colors.primaryOrange, padding: 16, borderRadius: 12, alignItems: 'center' },
+  btnText: { color: Colors.backgroundWhite, fontSize: 18, fontWeight: 'bold' },
+  googleBtn: { flexDirection: 'row', backgroundColor: Colors.borderLight, padding: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   googleIcon: { marginRight: 12 },
-  googleBtnText: { color: Colors.textDark, fontSize: 16, fontFamily: 'Jakarta-Bold' },
-  input: { backgroundColor: '#F8F9FA', borderWidth: 1, borderColor: Colors.borderLight, borderRadius: 12, padding: 16, fontSize: 16, marginBottom: 16, color: Colors.textDark },
-  btn: { backgroundColor: Colors.secondaryTeal, paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
-  btnText: { color: Colors.backgroundWhite, fontSize: 16, fontFamily: 'Jakarta-Bold' }
+  googleBtnText: { color: Colors.textDark, fontSize: 18, fontWeight: '600' }
 });

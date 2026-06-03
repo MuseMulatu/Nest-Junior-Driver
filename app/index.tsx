@@ -4,7 +4,7 @@ import auth from '@react-native-firebase/auth';
 import { useEffect, useState} from 'react';
 import { Redirect } from "expo-router";
 import {  ActivityIndicator, View, Text } from 'react-native';
-import { registerNotificationListeners, playShortSound, playLongSound, handleNotification } from './notificationHandler';
+import { registerNotificationListeners, playShortSound, playLongSound, handleNotification } from './_notificationHandler';
 import crashlytics from '@react-native-firebase/crashlytics';//
 import firestore from '@react-native-firebase/firestore';
 import { useCreditStore } from "@/store"
@@ -22,12 +22,12 @@ const Page = () => {
   // Configure notification channel (Android only)
   const configureNotificationChannel = async () => {
     try {
-      await Notifications.setNotificationChannelAsync("ride_notifications_happy", {
-        name: "Happy Ride Notifications",
-        importance: Notifications.AndroidImportance.HIGH,
-        sound: "new_follower1",
-      vibrationPattern: [0, 200, 100, 1000, 300, 200, 100, 1000, 300],
-      });
+await Notifications.setNotificationChannelAsync("ride_notifications_happy", {
+  name: "Happy Ride Notifications",
+  importance: Notifications.AndroidImportance.HIGH,
+  sound: "new_follower1.wav", // <--- Fixed
+  vibrationPattern: [0, 200, 100, 1000, 300, 200, 100, 1000, 300],
+});
 
       await Notifications.setNotificationChannelAsync("ride_notifications", {
   name: "Ride Notifications",

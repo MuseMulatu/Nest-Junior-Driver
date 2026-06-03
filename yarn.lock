@@ -5303,6 +5303,11 @@ expo-manifests@~56.0.4:
   dependencies:
     expo-json-utils "~56.0.0"
 
+expo-media-library@~56.0.6:
+  version "56.0.6"
+  resolved "https://registry.npmjs.org/expo-media-library/-/expo-media-library-56.0.6.tgz#6fc30bbbe01698bb3e03344b90fd3bcd8cbfb7c5"
+  integrity sha512-UsyVcxP7Op9ErFFLW1xImjoKFgKi7XSw8hrCfzf2yIG+OgVb9dsQth0mVRPgfRxdELagsUslXc1QXTiW8dpbaQ==
+
 expo-modules-autolinking@~56.0.14:
   version "56.0.14"
   resolved "https://registry.npmjs.org/expo-modules-autolinking/-/expo-modules-autolinking-56.0.14.tgz#6aed55b0afe39c341bb4cc443ec142d68213dec2"

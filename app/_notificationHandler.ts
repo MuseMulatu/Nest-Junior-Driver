@@ -8,6 +8,7 @@ import newFollowerSound from "@/assets/sounds/new_follower2.m4a";
 import rideRequestSound from "@/assets/sounds/ride_request2.mp3";
 import { useRideStore } from '@/firebaseconf'; 
 import { useGroupStore, useSharedDriverStore, useSoloCancelledStore, useSharedCancelledStore, useSharedAddStore, useCallCenterPickupStore, useTrackStore } from '@/store';
+import { useLookInStore } from '@/store';
 
 export const handleNotification = async (notification) => {
   let { title, body, data } = notification.request.content;
@@ -63,6 +64,10 @@ export const handleNotification = async (notification) => {
         userLocation: data.userLocation, 
         plateNumber: data.plateNumber 
       });
+      break;
+    case "START_LOOK_IN_BROADCAST":
+      console.log("🎥 Parent requested Look-In! Room:", data.roomId);
+      useLookInStore.getState().startLookIn(data.roomId);
       break;
     case "track":
       useTrackStore.getState().setTrack(true);
